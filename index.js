@@ -9,12 +9,19 @@ dotenv.config();
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_DB_URL,
-     {useNewUrlParser: true, useUnifiedTopology: true}, 
-     () => console.log('MongoDB Connected...'));
+     {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useCreateIndex: true,
+    }, 
+    () => console.log('MongoDB Connected...')
+  );
 
 const app = express();
 
-// middleware useDebugValue
+// middleware usage.
+
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(helmet());
 app.use(morgan('common'));

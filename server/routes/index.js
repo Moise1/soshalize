@@ -1,9 +1,10 @@
 import express from 'express';
+import UserController from '../controllers/Users';
 
 const router = express.Router();
 
 // User routes
-router.get('/api/users', (req, res) => res.send('ALL USERS'))
+router.post('/api/signup', UserController.Signup)
 
 // Auth routes
 router.post('/api/login', (req, res) => res.send('Logged in'));

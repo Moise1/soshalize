@@ -1,14 +1,14 @@
 import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
-    userName: {
+    username: {
         type: String,
         require: true,
         min: 3,
         max: 20,
         unique: true
     },
-    emai: {
+    email: {
         type: String,
         require: true,
         max:  50,
@@ -37,5 +37,16 @@ const UserSchema = new mongoose.Schema({
     following: {
         type: Array,
         default: []
+    },
+    isAdmin: {
+        type: Boolean,
+        default: false
     }
-})
+
+}, {
+    timestamps: true
+},
+);
+
+
+export default mongoose.model('User', UserSchema);
