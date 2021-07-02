@@ -39,13 +39,23 @@ class UserController {
         }
     }
 
+    static async FetchUsers(req, res) {
+
+        try {
+            const users = await User.find({});
+            return res.status(200).json({message: 'All users', users})
+        } catch (error) {
+            if(error) return res.status(500).json(error.message)
+        }
+    }
     static async FindUser(req, res){
 
         const {id} = req.params;
         try {
             const user = await User.findById(id);
             if (!user) return res.status(404).json('User not found');
-            return res.status(200).json({message: "Success", user});
+            const {password, updatedAt, ...data} = user._doc;
+            return res.status(200).json({message: "Success", data});
 
         } catch (error) {
             if(error) return res.status(500).json(error.message)
@@ -53,16 +63,64 @@ class UserController {
     }
 
     static async EditUser(req, res){
-        let {userId, password} = req.body;
+        let {userId, password, isAdmin} = req.body;
         const {id} = req.params;
 
         try {
-            if(userId === id  || req.user.isAdmin){
+            if(userId === id  || isAdmin){
                 if(password) password = await hashedPassword(password);
                 await User.findByIdAndUpdate(id, {$set: req.body, password});
                 return res.status(200).json('Account successfully updated.')
             }else{
-                return res.status(403).json("You can update only your account.")
+                return res.status(403).json("You can only update your account.");
+            }
+
+        } catch (error) {
+            if(error) return res.status(500).json(error.message);
+        }
+    }
+
+    static async FollowUser(req, res){
+        let {userId} = req.body;
+        const {id} = req.params;
+
+        try {
+            if(userId !== id){
+                const user = await User.findById(id);
+                const currentUser = await User.findById(userId);
+                if(!user.followers.includes(userId)){
+                    await user.updateOne({$push: {followers: userId}});
+                    await currentUser.updateOne({$push: {following: id}});
+                    return res.status(200).json(`Done! You're now following ${user.username}`);
+                }else{
+                    return res.status(409).json(`You're already following ${user.username}`)
+                }
+            }else{
+                return res.status(403).json("You can't follow yourself.");
+            }
+
+        } catch (error) {
+            if(error) return res.status(500).json(error.message);
+        }
+    }
+
+    static async UnfollowUser(req, res){
+        let {userId} = req.body;
+        const {id} = req.params;
+
+        try {
+            if(userId !== id){
+                const user = await User.findById(id);
+                const currentUser = await User.findById(userId);
+                if(user.followers.includes(userId)){
+                    await user.updateOne({$pull: {followers: userId}});
+                    await currentUser.updateOne({$pull: {following: id}});
+                    return res.status(200).json(`Done! You've unfollowed ${user.username}`);
+                }else{
+                    return res.status(409).json(`You already unfollowed ${user.username}`)
+                }
+            }else{
+                return res.status(403).json("You can't unfollow yourself.");
             }
 
         } catch (error) {
@@ -71,19 +129,24 @@ class UserController {
     }
 
     static async DeleteUser(req, res){
+
+        const {userId, isAdmin} = req.body;
          const {id} = req.params;
         try {
             const user = await User.findById(id);
-            if (!user) return res.status(404).json('User not found');
-            await User.deleteOne(user);
-            return res.status(200).json('User successfully deleted.');
+            if (!user) {
+                return res.status(404).json('User not found')
+            };
+            if(userId === id  || isAdmin){
+                await User.findByIdAndDelete(id);
+                return res.status(200).json('User successfully deleted.');
+            }else{
+                return res.status(403).json('You can only delete your account.');
+            }
         } catch (error) {
             if(error) return res.status(500).json(error.message)
         }
-    }
-
-    
+    } 
 }
 
 export default UserController;
-
